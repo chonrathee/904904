@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คำนวณวันหนีราชการ</title>
+  <style>
+    body {
+      font-family: 'Noto Sans Thai', sans-serif;
+      padding: 2rem;
+      background: #f8f9fa;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+    }
+    label, input, button {
+      font-size: 1.2rem;
+      display: block;
+      margin: 1rem auto;
+      max-width: 400px;
+      width: 100%;
+    }
+    #result {
+      margin-top: 2rem;
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      font-size: 1.2rem;
+    }
+    .btn-download {
+      margin-top: 1rem;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>ระบบคำนวณวันหนีราชการ</h1>
+  <label for="start">วันที่เริ่มขาดราชการ:</label>
+  <input type="date" id="start">
+
+  <label for="end">วันที่ถูกจับ / กลับเข้าหน่วย:</label>
+  <input type="date" id="end">
+
+  <button onclick="calculate()">คำนวณ</button>
+
+  <div id="result"></div>
+  <button class="btn-download" onclick="downloadPDF()">ดาวน์โหลด PDF</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    function calculate() {
+      const start = new Date(document.getElementById('start').value);
+      const end = new Date(document.getElementById('end').value);
+
+      if (!start || !end || end <= start) {
+        document.getElementById('result').innerHTML = '<b>กรุณากรอกวันที่ให้ถูกต้อง</b>';
+        return;
+      }
+
+      let resultText = '<b>รายละเอียดการคำนวณ:</b><br>';
+      const startStr = start.toLocaleDateString('th-TH');
+      const endStr = end.toLocaleDateString('th-TH');
+
+      resultText += `เริ่มขาดราชการ: ${startStr}<br>กลับเข้าหน่วย: ${endStr}<br>`;
+
+      let fullYears = 0;
+      let check = new Date(start);
+      while (check <= end) {
+        let nextYear = new Date(check);
+        nextYear.setFullYear(check.getFullYear() + 1);
+        if (nextYear <= end) {
+          fullYears++;
+          check = nextYear;
+        } else {
+          break;
+        }
+      }
+
+      let remainingDays = Math.floor((end - check) / (1000 * 60 * 60 * 24));
+      remainingDays -= 1;
+
+      let months = 0, days = 0;
+      if (remainingDays >= 360 && remainingDays <= 364) {
+        fullYears++;
+      } else {
+        months = Math.floor(remainingDays / 30);
+        days = remainingDays % 30;
+      }
+
+      resultText += `<br><b>ผลลัพธ์:</b><br>`;
+      resultText += `รวมหนีราชการ: ${fullYears} ปี ${months} เดือน ${days} วัน`;
+      resultText += `<br><br><i>*นับปีเฉพาะรอบสุริยคติ / 30 วัน = 1 เดือน*</i>`;
+      document.getElementById('result').innerHTML = resultText;
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const resultHTML = document.getElementById('result').innerHTML;
+      const temp = document.createElement('div');
+      temp.innerHTML = resultHTML;
+      const text = temp.innerText;
+      doc.text(text, 10, 10);
+      doc.save('ผลการคำนวณวันหนีราชการ.pdf');
+    }
+  </script>
+</body>
+</html>
